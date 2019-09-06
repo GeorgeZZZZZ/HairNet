@@ -9,9 +9,9 @@
 #---------------------------------------------------
 
 bl_info = {
-        "name":"HairNet",
-        "author": "Rhett Jackson",
-        "version": (0,5,1),
+        "name":"HairNet_modify_for_Unity_Hair_Tool",
+        "author": "Rhett Jackson / q",
+        "version": (0,5,1,0.1),
         "blender": (2,7,4),
         "location": "Properties",
         "category": "Particle",
@@ -51,6 +51,10 @@ bpy.types.Object.hnSproutHairs=IntProperty(
 #         description="Number of subdivisions to add along the guide hairs",
 #         default=0)
 
+bpy.types.Object.qVertsHairForUnityHairTool=BoolProperty(
+        name="qVertsHairForUnityHairTool",
+        description="If true then hair parameter will change to: Emit from verts, no Random, no children, Display Steps 4",
+        default=False)
 
 def debPrintVertEdges(vert_edges):
     print("vert_edges: ")
@@ -482,7 +486,7 @@ class HairNet (bpy.types.Operator):
 
                 '''_T_S create new and out'''
                 options[2] = makeNewHairSystem(targetObject,sysName)
-            
+
             if (self.meshKind=="SHEET"):
                 print("Hair sheet "+ thisHairObj.name)
                 #Create all hair guides
@@ -628,27 +632,42 @@ class HairNet (bpy.types.Operator):
             pset = options[0]
         else:
             #Create new settings
-            pset.type = 'HAIR'
-    
-            pset.emit_from = 'FACE'
-            pset.use_render_emitter = False
-            pset.use_strand_primitive = True
-    
-            # Children
-            pset.child_type = 'SIMPLE'
-            pset.child_nbr = 6
-            pset.rendered_child_count = 50
-            pset.child_length = 1.0
-            pset.child_length_threshold = 0.0
-            pset.child_radius = 0.1
-            pset.child_roundness = 1.0
+
+            if self.headObj.qVertsHairForUnityHairTool:
+                pset.type = 'HAIR'
+        
+                pset.emit_from = 'VERT'
+                pset.use_advanced_hair = True # use advanced
+                pset.use_emit_random = False # no random
+                pset.draw_step = 4 # 4 step = 17 vertexs/segments
+                
+                pset.use_render_emitter = False
+                pset.use_strand_primitive = True
+
+                # no children
+
+            else:
+                pset.type = 'HAIR'
+        
+                pset.emit_from = 'FACE'
+                pset.use_render_emitter = False
+                pset.use_strand_primitive = True
+        
+                # Children
+                pset.child_type = 'SIMPLE'
+                pset.child_nbr = 6
+                pset.rendered_child_count = 50
+                pset.child_length = 1.0
+                pset.child_length_threshold = 0.0
+                pset.child_radius = 0.1
+                pset.child_roundness = 1.0
     
         #Rename Hair Settings
         pset.name = ''.join([options[2].name, " Hair Settings"])
         pset.hair_step = nSteps-1
         #This set the number of guides for the particle system. It may have to be the same for every instance of the system.
         pset.count = nGuides
-        
+
         #Render the emitter object?
         if options[3]:
             pset.use_render_emitter = True
@@ -881,7 +900,7 @@ class HairNetPanel(bpy.types.Panel):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "particle"
-    bl_label = "HairNet 0.5.1"
+    bl_label = "HairNet 0.5.1.0.1"
 
 
 
@@ -899,6 +918,9 @@ class HairNetPanel(bpy.types.Panel):
         row.label("Objects Start here")
 
         '''Is this a hair object?'''
+
+        row = layout.row()
+        row.prop(self.headObj, "qVertsHairForUnityHairTool", text = "Vertex Hair for Unity hair tool")
 
         row = layout.row()
         try:
